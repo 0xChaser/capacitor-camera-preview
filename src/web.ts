@@ -11,14 +11,9 @@ import type {
 } from './definitions';
 
 export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
-  /**
-   *  track which camera is used based on start options
-   *  used in capture
-   */
   private isBackCamera: boolean;
 
   async start(options: CameraPreviewOptions): Promise<void> {
-    // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
       await navigator.mediaDevices
         .getUserMedia({
@@ -26,7 +21,6 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
           video: true,
         })
         .then((stream: MediaStream) => {
-          // Stop any existing stream so we can request media with different constraints based on user input
           stream.getTracks().forEach((track) => track.stop());
         })
         .catch((error) => {
@@ -41,7 +35,6 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
         videoElement.id = 'video';
         videoElement.setAttribute('class', options.className || '');
 
-        // Don't flip video feed if camera is rear facing
         if (options.position !== 'rear') {
           videoElement.setAttribute('style', '-webkit-transform: scaleX(-1); transform: scaleX(-1);');
         }
@@ -49,9 +42,6 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
         const userAgent = navigator.userAgent.toLowerCase();
         const isSafari = userAgent.includes('safari') && !userAgent.includes('chrome');
 
-        // Safari on iOS needs to have the autoplay, muted and playsinline attributes set for video.play() to be successful
-        // Without these attributes videoElement.play() will throw a NotAllowedError
-        // https://developer.apple.com/documentation/webkit/delivering_video_content_for_safari
         if (isSafari) {
           videoElement.setAttribute('autoplay', 'true');
           videoElement.setAttribute('muted', 'true');
@@ -77,7 +67,6 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
 
           navigator.mediaDevices.getUserMedia(constraints).then(
             function (stream) {
-              //video.src = window.URL.createObjectURL(stream);
               videoElement.srcObject = stream;
               videoElement.play();
               resolve();
@@ -121,13 +110,11 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
       const video = document.getElementById('video') as HTMLVideoElement;
       const canvas = document.createElement('canvas');
 
-      // video.width = video.offsetWidth;
 
       const context = canvas.getContext('2d');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
-      // flip horizontally back camera isn't used
       if (!this.isBackCamera) {
         context.translate(video.videoWidth, 0);
         context.scale(-1, 1);
@@ -160,7 +147,6 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
     throw new Error('getSupportedFlashModes not supported under the web platform');
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async setFlashMode(_options: { flashMode: CameraPreviewFlashMode | string }): Promise<void> {
     throw new Error('setFlashMode not supported under the web platform');
   }
@@ -181,6 +167,30 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
   }
 
   async addShape(_options: CameraPreviewShapeOptions): Promise<void> {
+    throw this.unimplemented('Not implemented on web.');
+  }
+
+  async captureForReview(_options?: CameraPreviewPictureOptions): Promise<void> {
+    throw this.unimplemented('Not implemented on web.');
+  }
+
+  async confirmReview(): Promise<{ value: string; originalValue: string; editData: string }> {
+    throw this.unimplemented('Not implemented on web.');
+  }
+
+  async startFromImage(_options: { base64: string; editData?: string }): Promise<void> {
+    throw this.unimplemented('Not implemented on web.');
+  }
+
+  async cancelReview(): Promise<void> {
+    throw this.unimplemented('Not implemented on web.');
+  }
+
+  async setZoom(_options: { zoom: number }): Promise<void> {
+    throw this.unimplemented('Not implemented on web.');
+  }
+
+  async rotateReview(): Promise<void> {
     throw this.unimplemented('Not implemented on web.');
   }
 }

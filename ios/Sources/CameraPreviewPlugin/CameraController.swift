@@ -1,11 +1,3 @@
-//
-//  CameraController.swift
-//  Plugin
-//
-//  Created by Ariel Hernandez Musa on 7/14/19.
-//  Copyright © 2019 Max Lynch. All rights reserved.
-//
-
 import AVFoundation
 import UIKit
 
@@ -46,7 +38,7 @@ extension CameraController {
 
         func configureCaptureDevices() throws {
 
-            let session = AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera], mediaType: AVMediaType.video, position: .unspecified)
+            let session = AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInTripleCamera, .builtInDualWideCamera, .builtInDualCamera, .builtInWideAngleCamera], mediaType: AVMediaType.video, position: .unspecified)
 
             let cameras = session.devices.compactMap { $0 }
             guard !cameras.isEmpty else { throw CameraControllerError.noCamerasAvailable }
@@ -90,7 +82,6 @@ extension CameraController {
                 }
             } else { throw CameraControllerError.noCamerasAvailable }
 
-            // Add audio input
             if disableAudio == false {
                 if let audioDevice = self.audioDevice {
                     self.audioInput = try AVCaptureDeviceInput(device: audioDevice)
@@ -138,7 +129,6 @@ extension CameraController {
                 try configureDeviceInputs()
                 try configurePhotoOutput()
                 try configureDataOutput()
-                // try configureVideoOutput()
             } catch {
                 DispatchQueue.main.async {
                     completionHandler(error)
@@ -185,7 +175,7 @@ extension CameraController {
     }
 
     func updateVideoOrientation() {
-        assert(Thread.isMainThread) // UIApplication.statusBarOrientation requires the main thread.
+        assert(Thread.isMainThread) 
 
         let videoOrientation: AVCaptureVideoOrientation
         switch UIApplication.shared.statusBarOrientation {
@@ -409,8 +399,6 @@ extension CameraController {
 
         let fileUrl = path.appendingPathComponent(fileName)
         try? FileManager.default.removeItem(at: fileUrl)
-        /*videoOutput!.startRecording(to: fileUrl, recordingDelegate: self)
-         self.videoRecordCompletionBlock = completion*/
     }
 
     func stopRecording(completion: @escaping (Error?) -> Void) {
@@ -418,7 +406,6 @@ extension CameraController {
             completion(CameraControllerError.captureSessionIsMissing)
             return
         }
-        // self.videoOutput?.stopRecording()
     }
 }
 
@@ -458,7 +445,7 @@ extension CameraController: UIGestureRecognizerDelegate {
     private func handlePinch(_ pinch: UIPinchGestureRecognizer) {
         guard let device = self.currentCameraPosition == .rear ? rearCamera : frontCamera else { return }
 
-        func minMaxZoom(_ factor: CGFloat) -> CGFloat { return max(1.0, min(factor, device.activeFormat.videoMaxZoomFactor)) }
+        func minMaxZoom(_ factor: CGFloat) -> CGFloat { return max(device.minAvailableVideoZoomFactor, min(factor, device.activeFormat.videoMaxZoomFactor)) }
 
         func update(scale factor: CGFloat) {
             do {
@@ -555,17 +542,17 @@ extension CameraControllerError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .captureSessionAlreadyRunning:
-            return NSLocalizedString("Capture Session is Already Running", comment: "Capture Session Already Running")
+            return NSLocalizedString("Capture Session is Already Running", comment: "")
         case .captureSessionIsMissing:
-            return NSLocalizedString("Capture Session is Missing", comment: "Capture Session Missing")
+            return NSLocalizedString("Capture Session is Missing", comment: "")
         case .inputsAreInvalid:
-            return NSLocalizedString("Inputs Are Invalid", comment: "Inputs Are Invalid")
+            return NSLocalizedString("Inputs Are Invalid", comment: "")
         case .invalidOperation:
-            return NSLocalizedString("Invalid Operation", comment: "invalid Operation")
+            return NSLocalizedString("Invalid Operation", comment: "")
         case .noCamerasAvailable:
-            return NSLocalizedString("Failed to access device camera(s)", comment: "No Cameras Available")
+            return NSLocalizedString("Failed to access device camera(s)", comment: "")
         case .unknown:
-            return NSLocalizedString("Unknown", comment: "Unknown")
+            return NSLocalizedString("Unknown", comment: "")
 
         }
     }
@@ -576,17 +563,15 @@ extension UIImage {
     func fixedOrientation() -> UIImage? {
 
         guard imageOrientation != UIImage.Orientation.up else {
-            // This is default orientation, don't need to do anything
             return self.copy() as? UIImage
         }
 
         guard let cgImage = self.cgImage else {
-            // CGImage is not available
             return nil
         }
 
         guard let colorSpace = cgImage.colorSpace, let ctx = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: cgImage.bitsPerComponent, bytesPerRow: 0, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
-            return nil // Not able to create CGContext
+            return nil 
         }
 
         var transform: CGAffineTransform = CGAffineTransform.identity
@@ -607,7 +592,6 @@ extension UIImage {
             break
         }
 
-        // Flip image one more time if needed to, this is to prevent flipped image
         switch imageOrientation {
         case .upMirrored, .downMirrored:
             transform.translatedBy(x: size.width, y: 0)
@@ -634,10 +618,20 @@ extension UIImage {
 
 extension CameraController: AVCaptureFileOutputRecordingDelegate {
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
-        /*if error == nil {
-         self.videoRecordCompletionBlock?(outputFileURL, nil)
-         } else {
-         self.videoRecordCompletionBlock?(nil, error)
-         }*/
+    }
+}
+extension CameraController {
+    func setZoom(_ zoomFactor: CGFloat) throws {
+        guard let device = currentCameraPosition == .front ? frontCamera : rearCamera else {
+            throw CameraControllerError.noCamerasAvailable
+        }
+        
+        try device.lockForConfiguration()
+        let maxZoom = device.activeFormat.videoMaxZoomFactor
+        let minZoom = device.minAvailableVideoZoomFactor
+        let newZoom = max(minZoom, min(zoomFactor, maxZoom))
+        device.videoZoomFactor = newZoom
+        self.zoomFactor = newZoom
+        device.unlockForConfiguration()
     }
 }

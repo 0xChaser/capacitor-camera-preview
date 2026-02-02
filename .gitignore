@@ -74,8 +74,3 @@ captures
 
 #local secrets
 .env
-
-# Locally published versions
-capacitor-community-camera-preview-*.tgz
-
-CLAUDE.md
