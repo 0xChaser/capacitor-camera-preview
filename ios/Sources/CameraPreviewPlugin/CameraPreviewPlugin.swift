@@ -450,9 +450,10 @@ public class CameraPreview: CAPPlugin, CAPBridgedPlugin, UIScrollViewDelegate {
                     let scrollView = UIScrollView(frame: self.previewView.bounds)
                     scrollView.delegate = self
                     scrollView.minimumZoomScale = 1.0
-                    scrollView.maximumZoomScale = 3.0
+                    scrollView.maximumZoomScale = 1.0
                     scrollView.showsHorizontalScrollIndicator = false
                     scrollView.showsVerticalScrollIndicator = false
+                    scrollView.isScrollEnabled = false
                     self.reviewScrollView = scrollView
                     
                     let containerView = UIView(frame: scrollView.bounds)
@@ -470,8 +471,10 @@ public class CameraPreview: CAPPlugin, CAPBridgedPlugin, UIScrollViewDelegate {
                     
                     if let overlay = self.shapesOverlay {
                         overlay.removeFromSuperview()
-                        overlay.frame = containerView.bounds
-                        containerView.addSubview(overlay)
+                        overlay.frame = self.previewView.bounds
+                        self.previewView.addSubview(overlay)
+                        overlay.isUserInteractionEnabled = true
+                        self.previewView.bringSubviewToFront(overlay)
                         
                         overlay.removeAllShapes()
                     }
@@ -570,7 +573,7 @@ public class CameraPreview: CAPPlugin, CAPBridgedPlugin, UIScrollViewDelegate {
                 
                 self.shapesOverlay?.rotateShapes(
                     currentImageSize: image.size,
-                    viewSize: self.reviewContainerView!.bounds.size
+                    viewSize: self.previewView.bounds.size
                 )
                 
                 call.resolve()
@@ -595,9 +598,10 @@ public class CameraPreview: CAPPlugin, CAPBridgedPlugin, UIScrollViewDelegate {
                  let scrollView = UIScrollView(frame: self.previewView.bounds)
                  scrollView.delegate = self
                  scrollView.minimumZoomScale = 1.0
-                 scrollView.maximumZoomScale = 3.0
+                 scrollView.maximumZoomScale = 1.0  // Disable zoom/crop
                  scrollView.showsHorizontalScrollIndicator = false
                  scrollView.showsVerticalScrollIndicator = false
+                 scrollView.isScrollEnabled = false  // Disable scrolling
                  self.reviewScrollView = scrollView
                  
                  let containerView = UIView(frame: scrollView.bounds)
@@ -622,8 +626,10 @@ public class CameraPreview: CAPPlugin, CAPBridgedPlugin, UIScrollViewDelegate {
              
              if let overlay = self.shapesOverlay {
                  overlay.removeFromSuperview()
-                 overlay.frame = self.reviewContainerView!.bounds
-                 self.reviewContainerView!.addSubview(overlay)
+                 overlay.frame = self.previewView.bounds
+                 self.previewView.addSubview(overlay)
+                 overlay.isUserInteractionEnabled = true
+                 self.previewView.bringSubviewToFront(overlay)
                  
                  if let editJson = editData {
                      overlay.loadOverlayData(editJson)
@@ -676,7 +682,8 @@ public class CameraPreview: CAPPlugin, CAPBridgedPlugin, UIScrollViewDelegate {
             } else {
                 self.previewView.addSubview(overlay)
             }
-            overlay.frame = self.previewView.bounds 
+            overlay.frame = self.previewView.bounds
+            overlay.isUserInteractionEnabled = false
         }
         
         self.capturedImageForReview = nil
@@ -726,7 +733,7 @@ public class CameraPreview: CAPPlugin, CAPBridgedPlugin, UIScrollViewDelegate {
             
             NSLayoutConstraint.activate([
                 stackView.centerXAnchor.constraint(equalTo: parentView.centerXAnchor),
-                stackView.bottomAnchor.constraint(equalTo: parentView.bottomAnchor, constant: -8),
+                stackView.bottomAnchor.constraint(equalTo: parentView.bottomAnchor, constant: -40),
                 stackView.heightAnchor.constraint(equalToConstant: 24)
             ])
             
