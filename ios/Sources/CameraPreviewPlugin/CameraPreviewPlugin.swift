@@ -3,7 +3,7 @@ import Capacitor
 import AVFoundation
 
 @objc(CameraPreview)
-public class CameraPreview: CAPPlugin, CAPBridgedPlugin {
+public class CameraPreview: CAPPlugin, CAPBridgedPlugin, UIScrollViewDelegate {
 
     public let identifier = "CameraPreviewPlugin"
     public let jsName = "CameraPreview"
@@ -61,12 +61,19 @@ public class CameraPreview: CAPPlugin, CAPBridgedPlugin {
 
         let adjustedHeight = self.paddingBottom != nil ? height - self.paddingBottom! : height
 
-        if UIApplication.shared.statusBarOrientation.isLandscape {
+        let orientation: UIInterfaceOrientation
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            orientation = windowScene.interfaceOrientation
+        } else {
+            orientation = .portrait
+        }
+
+        if orientation.isLandscape {
             previewView.frame = CGRect(x: y, y: x, width: max(adjustedHeight, width), height: min(adjustedHeight, width))
             self.cameraController.previewLayer?.frame = previewView.frame
         }
 
-        if UIApplication.shared.statusBarOrientation.isPortrait {
+        if orientation.isPortrait {
             previewView.frame = CGRect(x: x, y: y, width: min(adjustedHeight, width), height: max(adjustedHeight, width))
             self.cameraController.previewLayer?.frame = previewView.frame
         }
@@ -345,7 +352,7 @@ public class CameraPreview: CAPPlugin, CAPBridgedPlugin {
     @objc func startRecordVideo(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
 
-            let quality: Int? = call.getInt("quality", 85)
+            let _: Int? = call.getInt("quality", 85)
 
             self.cameraController.captureVideo { (image, error) in
 
@@ -512,7 +519,7 @@ public class CameraPreview: CAPPlugin, CAPBridgedPlugin {
 
     }
     
-    public func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+    @objc public func viewForZooming(in scrollView: UIScrollView) -> UIView? {
         return self.reviewContainerView
     }
     
