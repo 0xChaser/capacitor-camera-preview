@@ -22,7 +22,9 @@ public class CameraPreview: CAPPlugin, CAPBridgedPlugin, UIScrollViewDelegate {
         CAPPluginMethod(name: "startFromImage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "rotateReview", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setZoom", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "cancelReview", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "cancelReview", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "captureForReview", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "confirmReview", returnType: CAPPluginReturnPromise)
     ]
 
     var previewView: UIView!
