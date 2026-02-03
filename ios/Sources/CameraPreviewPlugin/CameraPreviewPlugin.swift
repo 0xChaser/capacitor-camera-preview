@@ -137,22 +137,24 @@ public class CameraPreview: CAPPlugin, CAPBridgedPlugin, UIScrollViewDelegate {
                         self.webView?.scrollView.backgroundColor = UIColor.clear
                         self.webView?.superview?.addSubview(self.previewView)
                         
-                        if let toBack = self.toBack, toBack {
-                            self.webView?.superview?.bringSubviewToFront(self.webView!)
-                        }
-                        
                         try? self.cameraController.displayPreview(on: self.previewView)
                         
                         self.shapesOverlay = ShapesOverlayView(frame: CGRect(x: self.x ?? 0, y: self.y ?? 0, width: width, height: adjustedHeight))
                         self.shapesOverlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-                        self.webView?.superview?.addSubview(self.shapesOverlay)
-
-                        let frontView = (self.toBack ?? false) ? self.webView : self.previewView
-                        self.cameraController.setupGestures(target: frontView ?? self.previewView, enableZoom: self.enableZoom ?? false)
+                        self.shapesOverlay.isUserInteractionEnabled = false
+                        self.previewView.addSubview(self.shapesOverlay)
 
                         if self.enableZoom == true {
                            self.setupZoomControl()
                         }
+                        
+                        // Always bring WebView to front when toBack is true so HTML buttons work
+                        if let toBack = self.toBack, toBack {
+                            self.webView?.superview?.bringSubviewToFront(self.webView!)
+                        }
+
+                        let frontView = (self.toBack ?? false) ? self.webView : self.previewView
+                        self.cameraController.setupGestures(target: frontView ?? self.previewView, enableZoom: self.enableZoom ?? false)
 
                         if self.rotateWhenOrientationChanged == true {
                             NotificationCenter.default.addObserver(self, selector: #selector(CameraPreview.rotated), name: UIDevice.orientationDidChangeNotification, object: nil)
@@ -702,10 +704,12 @@ public class CameraPreview: CAPPlugin, CAPBridgedPlugin, UIScrollViewDelegate {
             for (title, value) in values {
                 let button = UIButton(type: .system)
                 button.setTitle(title, for: .normal)
-                button.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+                button.titleLabel?.font = UIFont.systemFont(ofSize: 11)
+                button.backgroundColor = UIColor.black.withAlphaComponent(0.4)
                 button.setTitleColor(.white, for: .normal)
-                button.layer.cornerRadius = 15
-                button.heightAnchor.constraint(equalToConstant: 30).isActive = true
+                button.layer.cornerRadius = 10
+                button.heightAnchor.constraint(equalToConstant: 20).isActive = true
+                button.widthAnchor.constraint(equalToConstant: 36).isActive = true
                 button.tag = Int(value * 10) 
                 
                 button.addAction(UIAction(handler: { [weak self] _ in
@@ -720,9 +724,8 @@ public class CameraPreview: CAPPlugin, CAPBridgedPlugin, UIScrollViewDelegate {
             
             NSLayoutConstraint.activate([
                 stackView.centerXAnchor.constraint(equalTo: parentView.centerXAnchor),
-                stackView.bottomAnchor.constraint(equalTo: parentView.bottomAnchor, constant: -20),
-                stackView.widthAnchor.constraint(equalToConstant: 250),
-                stackView.heightAnchor.constraint(equalToConstant: 40)
+                stackView.bottomAnchor.constraint(equalTo: parentView.bottomAnchor, constant: -8),
+                stackView.heightAnchor.constraint(equalToConstant: 24)
             ])
             
             parentView.bringSubviewToFront(stackView)
